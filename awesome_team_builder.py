@@ -3,13 +3,28 @@ import sys
 
 import telepot
 from telepot.aio.delegate import pave_event_space, per_chat_id, create_open
-
-from atb import config
-from atb.Domain import *
+from mongoengine import *
 
 
 class AwesomeException(Exception):
     pass
+
+
+class Player(EmbeddedDocument):
+    player_id = IntField()
+    name = StringField()
+
+
+class Match(Document):
+    chat_id = IntField(required=True)
+    name = StringField(required=True)
+    players = ListField(EmbeddedDocumentField(Player), name='players')
+
+
+db = dict(
+    name='awesome_teams',
+    connection='mongodb://{}:27017/awesome_teams'
+)
 
 
 class TeamArranger(telepot.aio.helper.ChatHandler):
@@ -74,9 +89,9 @@ class TeamArranger(telepot.aio.helper.ChatHandler):
 TOKEN = sys.argv[1]     # get token from command-line
 DB_HOST = sys.argv[2]   # get the db host from command-line
 
-database_connection = config.db['connection'].format(DB_HOST)
+database_connection = db['connection'].format(DB_HOST)
 
-connect(config.db['name'], host=database_connection)
+connect(db['name'], host=database_connection)
 
 bot = telepot.aio.DelegatorBot(TOKEN, [
     pave_event_space()(
